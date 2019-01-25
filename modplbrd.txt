@@ -1,0 +1,50 @@
+
+
+set SERVEROUTPUT ON
+begin 
+reconciler;
+end;
+
+
+create or replace procedure reconciler
+as
+ trans_id NSBT_ATM_TRX_LOG.TRANSACTION_ID%type; 
+ hostrow NSBT_HOST_TRX_LOG%rowtype;
+ atmrow NSBT_ATM_TRX_LOG%rowtype;
+ 
+  atm_maxid NSBT_ATM_TRX_LOG.TRANSACTION_ID%TYPE;
+ CURSOR cursatm is 
+      select distinct T1.TRANSACTION_ID from NSBT_ATM_TRX_LOG T1 where not exists (select distinct T2.TRANSACTION_ID from NSBT_HOST_TRX_LOG T2
+      where T2.TRANSACTION_ID= T1.TRANSACTION_ID);
+ CURSOR curshost is
+      select distinct T2.TRANSACTION_ID from NSBT_HOST_TRX_LOG T2 where not exists(select distinct T1.TRANSACTION_ID from NSBT_ATM_TRX_LOG T1 
+      where T2.TRANSACTION_ID= T1.TRANSACTION_ID);   
+      
+ begin
+ OPEN cursatm; 
+  LOOP 
+   FETCH cursatm into trans_id;
+      EXIT WHEN cursatm%notfound; 
+      /*In normal case there is no need to delete because everyday new table is created*/
+      delete from log_table;
+      dbms_output.put_line(trans_id); 
+      insert into log_table (transaction_id,description) values(trans_id,'This transaction is present in atm table but not present in host table');
+   END LOOP; 
+   CLOSE cursatm; 
+  
+   
+   OPEN curshost;
+   LOOP 
+   FETCH curshost into trans_id;
+      EXIT WHEN curshost%notfound; 
+      dbms_output.put_line(trans_id); 
+      insert into log_table (transaction_id,description) values(trans_id,'This transaction is present in host table but not present in atm table');
+
+   END LOOP; 
+   CLOSE curshost; 
+   /*mismatch */
+  
+     select max(TRANSACTION_ID) into atm_maxid from NSBT_atm_TRX_LOG;
+   dbms_output.put_line('max id');
+   dbms_output.put_line(atm_maxid);
+ end;

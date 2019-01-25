@@ -1,0 +1,191 @@
+/*simple plsql program*/
+set SERVEROUTPUT ON
+begin 
+dbms_output.put_line('welcome to plsql');
+end;
+
+/*adding declaration of variables and arithmetic operation*/
+set SERVEROUTPUT ON
+declare
+num1 number:=123;
+num2 number:=234;
+sum1 number;
+pro number;
+begin
+sum1:=num1+num2;
+pro:=num1*num2;
+DBMS_OUTPUT.put_line('sum is :'||sum1);
+DBMS_OUTPUT.put_line('product is :'||pro);
+end;
+
+
+/*difference between char and varchar*/
+set SERVEROUTPUT ON
+declare
+ch1 char(10):='siva';
+ch2 varchar(10):='siva';
+ch3 varchar2(10):='siva';
+begin
+DBMS_OUTPUT.PUT_LINE('size in char is:'||length(ch1));
+dbms_output.put_line('size in varchar is:'||length(ch2));
+dbms_output.put_line('size in varchar2 is:'||length(ch3));
+END;
+
+
+/*working on decimals*/
+set SERVEROUTPUT ON
+declare 
+n1 number(5,1);
+n2 number(3);
+
+n3 number(5,2);
+k1 number(5,3);
+k2 number(5,3);
+begin
+n1:=456.34445;                /*verify*/
+n2:=5;                        /*accepting values only upto 3 in decending*/
+k1:=n1/n2;
+
+n3:=456.34445;
+k2:=n1/n2;
+DBMS_OUTPUT.PUT_LINE(k1);
+DBMS_OUTPUT.PUT_LINE(k2);
+END;
+
+
+/*using select statement   retrieving from different tables*/
+set SERVEROUTPUT ON
+declare
+   cust_code number(10);
+   ename varchar2(30);
+begin
+select customer.CUSTOMER_CODE into cust_code from customer where customer_name='nsbt';
+select employees.first_name into ename from employees where employees.employee_id='101';
+DBMS_OUTPUT.PUT_Line(cust_code);
+DBMS_OUTPUT.PUT_Line(ename);
+end;
+
+
+/* retrieving all rows from a column using loop*/
+set SERVEROUTPUT ON
+declare
+   ename varchar2(30);
+   it number(4);
+begin
+select count(*) into it from employees;
+  FOR n_i IN 1..it LOOP
+select employees.first_name into ename from employees where employees.employee_id=n_i+99;
+DBMS_OUTPUT.PUT_Line(ename);
+  END LOOP;
+end;
+
+/* retrieving all rows from 4 column using loop*/
+set SERVEROUTPUT ON
+declare
+ empid employees.employee_id%TYPE;
+ ename employees.first_name%type;
+ email employees.email%type;
+ phone employees.phone_number%type;
+    it number(4);
+ begin
+ select count(*) into it from employees;
+   FOR n_i IN 1..it LOOP
+ select employees.employee_id, employees.first_name, employees.email, EMPLOYEES.PHONE_NUMBER into empid, ename, email, phone from employees where employee_id=n_i+99;
+ DBMS_OUTPUT.PUT_LINE(empid);
+  DBMS_OUTPUT.PUT_LINE(ename);
+ DBMS_OUTPUT.PUT_LINE(email);
+ DBMS_OUTPUT.PUT_LINE(phone);
+  DBMS_OUTPUT.PUT_LINE('-----');
+    END LOOP;
+ end;
+ 
+ 
+  /*using rowtype*/
+ set SERVEROUTPUT ON
+ declare
+ emprow employees%rowtype;
+ begin
+ select * into emprow from employees where EMPLOYEES.EMPLOYEE_ID=100;
+ dbms_output.put_line(emprow.first_name);
+ dbms_output.put_line(emprow.hire_date);
+  dbms_output.put_line(emprow.phone_number);
+ end;
+ 
+ 
+  /*nested blocks*/
+ set SERVEROUTPUT ON
+declare
+a number:=100;
+begin
+  dbms_output.put_line('out block');
+    dbms_output.put_line('value of a is'||a);
+    declare
+      a number:=50;
+      begin
+        dbms_output.put_line('inner block');
+        dbms_output.put_line('value of a is'||a);
+     end;
+    dbms_output.put_line('out block value of a is'||a);
+end;
+
+
+
+
+ /*naming nested blocks and accessing variables by block names*/
+ set SERVEROUTPUT ON
+ <<outblock>>
+declare
+a number:=100;
+begin
+  dbms_output.put_line('out block');
+    dbms_output.put_line('value of a in out block is'||a);
+    <<inblock>>
+    declare
+      a number:=50;
+      begin
+        dbms_output.put_line('inner block');
+        dbms_output.put_line('value of a in inner block is'||a);
+        dbms_output.put_line('value of a in out block accessing inside inner block is'||outblock.a);
+
+     end;
+end;
+            
+      
+      
+      /*named block procedure*/
+create or replace procedure firstpro
+as
+a number:=100;
+begin
+    dbms_output.put_line('value of a is:'||a);
+end;
+            
+
+set SERVEROUTPUT ON
+begin 
+firstpro;
+end;
+
+execute firstpro;
+ 
+ 
+ /*named block function*/
+create or replace function firstfun(a number)
+return number
+as
+begin
+    dbms_output.put_line('value of a is'||a);
+    return a;
+end;
+            
+
+set SERVEROUTPUT ON
+declare
+a number:=200;
+begin 
+a:=firstfun(a);
+end;
+
+ 
+ 
+
