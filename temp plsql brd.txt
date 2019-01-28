@@ -1,0 +1,87 @@
+
+
+set SERVEROUTPUT ON
+begin 
+reconciler;
+end;
+
+
+create or replace procedure reconciler
+as
+ trans_id NSBT_ATM_TRX_LOG.TRANSACTION_ID%type; 
+ 
+ hostrow NSBT_HOST_TRX_LOG%rowtype;
+ atmrow NSBT_ATM_TRX_LOG%rowtype;
+ atm_id nsbt_atm_trx_log.TRANSACTION_ID%type;
+ 
+  
+ CURSOR cursatm is 
+      select distinct T1.TRANSACTION_ID from NSBT_ATM_TRX_LOG T1 where not exists (select distinct T2.TRANSACTION_ID from NSBT_HOST_TRX_LOG T2
+      where T2.TRANSACTION_ID= T1.TRANSACTION_ID);
+ CURSOR curshost is
+      select distinct T2.TRANSACTION_ID from NSBT_HOST_TRX_LOG T2 where not exists(select distinct T1.TRANSACTION_ID from NSBT_ATM_TRX_LOG T1 
+      where T2.TRANSACTION_ID= T1.TRANSACTION_ID);   
+      
+      CURSOR cursatm1 is 
+      select distinct T1.TRANSACTION_ID from NSBT_ATM_TRX_LOG T1 where exists (select distinct T2.TRANSACTION_ID from NSBT_HOST_TRX_LOG T2
+      where T2.TRANSACTION_ID= T1.TRANSACTION_ID);
+      
+ begin
+ OPEN cursatm; 
+  LOOP 
+   FETCH cursatm into trans_id;
+      EXIT WHEN cursatm%notfound; 
+      /*In normal case there is no need to delete because everyday new table is created*/
+      delete from log_table;
+      dbms_output.put_line(trans_id); 
+      insert into log_table (transaction_id,description) values(trans_id,'This transaction is present in atm table but not present in host table');
+   END LOOP; 
+   CLOSE cursatm; 
+  
+   
+   OPEN curshost;
+   LOOP 
+   FETCH curshost into trans_id;
+      EXIT WHEN curshost%notfound; 
+      dbms_output.put_line(trans_id); 
+      insert into log_table (transaction_id,description) values(trans_id,'This transaction is present in host table but not present in atm table');
+
+   END LOOP; 
+   CLOSE curshost; 
+   
+   /*mismatch */
+   OPEN cursatm1; 
+  LOOP 
+   FETCH cursatm1 into atm_id;
+   EXIT WHEN cursatm1%notfound;
+   dbms_output.put_line(atm_id);
+   select * into hostrow from NSBT_HOST_TRX_LOG where nsbt_host_trx_log.TRANSACTION_ID=atm_id;
+   
+   select * into atmrow from NSBT_atm_TRX_LOG where nsbt_atm_trx_log.TRANSACTION_ID=atm_id;
+       
+         IF (atmrow.customer_id!=hostrow.customer_id) THEN 
+--        dbms_output.put_line(hostrow.transaction_id||'  '||hostrow.CUSTOMER_ID);
+        
+            insert into log_table (TRANSACTION_ID,description) values(atm_id,'There is a mismatch in the customer_id values');
+            
+             END IF;
+   
+         IF (atmrow.ACCOUNT_NUMBER!=hostrow.ACCOUNT_NUMBER) THEN 
+         
+            insert into log_table (TRANSACTION_ID,description) values(atm_id,'There is a mismatch in the ACCOUNT_NUMBER values');
+         
+          END IF;
+         
+         IF (atmrow.TRANSACTION_TYPE!=hostrow.TRANSACTION_TYPE) THEN 
+         
+            insert into log_table (TRANSACTION_ID,description) values(atm_id,'There is a mismatch in the TRANSACTION_TYPE values');
+         
+       END IF;
+   
+          
+    
+   END LOOP; 
+   CLOSE cursatm1; 
+   
+  
+ end;
